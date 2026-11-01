@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ROROR's Echo 🦜</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+        :root {
+            --primary: #ff6b8b;
+            --secondary: #6a11cb;
+            --bg-light: #fff5f7;
+            --chat-bg: #ffe6ec;
+            --text-dark: #333;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--bg-light) 0%, var(--chat-bg) 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Floating background hearts */
+        .bg-hearts {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0; overflow: hidden;
+        }
+        .bg-hearts span {
+            position: absolute;
+            font-size: 2rem;
+            opacity: 0.06;
+            animation: drift 22s linear infinite;
+        }
+        .bg-hearts span:nth-child(1) { left: 10%; animation-delay: 0s; }
+        .bg-hearts span:nth-child(2) { left: 30%; animation-delay: 4s; }
+        .bg-hearts span:nth-child(3) { left: 50%; animation-delay: 8s; }
+        .bg-hearts span:nth-child(4) { left: 70%; animation-delay: 12s; }
+        .bg-hearts span:nth-child(5) { left: 90%; animation-delay: 16s; }
+
+        @keyframes drift {
+            0% { transform: translateY(110vh) rotate(0deg); }
+            100% { transform: translateY(-10vh) rotate(360deg); }
+        }
+
+        /* Header */
+        .chat-header {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            z-index: 10;
+            position: relative;
+            border-bottom: 1px solid rgba(255,255,255,0.5);
+        }
+        .avatar {
+            width: 50px; height: 50px;
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.8rem; color: white;
+            box-shadow: 0 4px 10px rgba(106, 17, 203, 0.3);
+            animation: floatAvatar 3s ease-in-out infinite;
+        }
+        @keyframes floatAvatar {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+
+        .header-info h1 {
+            font-size: 1.2rem; color: var(--secondary);
+            font-family: 'Georgia', serif;
+        }
+        .header-info p {
+            font-size: 0.8rem; color: #20B2AA; font-weight: bold;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .header-info p::before {
+            content: ''; display: block; width: 8px; height: 8px;
+            background: #20B2AA; border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(32, 178, 170, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(32, 178, 170, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(32, 178, 170, 0); }
+        }
+
+        /* Chat Area */
+        .chat-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 1;
+            position: relative;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            max-width: 85%;
+            display: flex;
+            flex-direction: column;
+            animation: popIn 0.3s ease-out;
+        }
+        @keyframes popIn {
+            0% { opacity: 0; transform: translateY(10px) scale(0.95); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .message.echo { align-self: flex-start; }
+        .message.user { align-self: flex-end; }
+
+        .bubble {
+            padding: 14px 20px;
+            border-radius: 22px;
+            font-size: 1rem;
+            line-height: 1.5;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            position: relative;
+        }
+
+        .message.echo .bubble {
+            background: white;
+            color: var(--text-dark);
+            border-bottom-left-radius: 5px;
+        }
+
+        .message.user .bubble {
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+            color: white;
+            border-bottom-right-radius: 5px;
+            box-shadow: 0 4px 15px rgba(106, 17, 203, 0.2);
+        }
+
+        .timestamp {
+            font-size: 0.7rem;
+            color: #999;
+            margin-top: 5px;
+            margin-left: 5px;
+        }
+        .message.user .timestamp {
+            text-align: right;
+            margin-right: 5px;
+        }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            background: white;
+            padding: 15px 22px;
+            border-radius: 22px;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin-bottom: 10px;
+        }
+        .typing-indicator.active { display: flex; gap: 6px; }
+        
+        .typing-indicator span {
+            width: 8px; height: 8px;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* Input Area */
+        .chat-input-area {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 15px 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.05);
+            z-index: 10;
+            border-top: 1px solid rgba(255,255,255,0.5);
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid rgba(106, 17, 203, 0.1);
+            border-radius: 30px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+            background: white;
+        }
+        .chat-input-area input:focus {
+            border-color: var(--primary);
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+            color: white;
+            border: none;
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(106, 17, 203, 0.3);
+        }
+        .send-btn:hover { transform: scale(1.05); }
+        .send-btn:active { transform: scale(0.95); }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(106, 17, 203, 0.2); border-radius: 10px; }
+
+    </style>
+</head>
+<body>
+
+    <!-- Background Animation -->
+    <div class="bg-hearts">
+        <span>❤</span><span>💛</span><span>❤</span><span>💛</span><span>❤</span>
+    </div>
+
+    <!-- Header -->
+    <div class="chat-header">
+        <div class="avatar">🦜</div>
+        <div class="header-info">
+            <h1>ROROR's Echo</h1>
+            <p>Always here for you</p>
+        </div>
+    </div>
+
+    <!-- Chat Container -->
+    <div class="chat-container" id="chatContainer">
+        <!-- Initial Welcome Message -->
+        <div class="message echo">
+            <div class="bubble">Hey Md... I'm ROROR's Echo. If he's not around, I'm here to listen, remind you of our memories, or just chat. ❤️</div>
+            <div class="timestamp">Just now</div>
+        </div>
+    </div>
+
+    <!-- Typing Indicator -->
+    <div class="typing-indicator" id="typingIndicator">
+        <span></span><span></span><span></span>
+    </div>
+
+    <!-- Input Area -->
+    <div class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="Type a message..." autocomplete="off">
+        <button class="send-btn" id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+    </div>
+
+    <script>
+        // ⚠️ Your Cloudflare Worker URL
+        const WORKER_URL = "https://echo-ai.w-raghav-singh777.workers.dev/";
+
+        const chatContainer = document.getElementById('chatContainer');
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const typingIndicator = document.getElementById('typingIndicator');
+
+        // Auto-scroll to bottom
+        function scrollToBottom() {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Get current time
+        function getTime() {
+            const now = new Date();
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            return hours + ':' + minutes + ' ' + ampm;
+        }
+
+        // Add message to UI
+        function addMessage(text, sender) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message ' + sender;
+            
+            msgDiv.innerHTML = `
+                <div class="bubble">${text}</div>
+                <div class="timestamp">${getTime()}</div>
+            `;
+            
+            chatContainer.appendChild(msgDiv);
+            scrollToBottom();
+        }
+
+        // Show/hide typing indicator
+        function showTyping(show) {
+            if (show) {
+                typingIndicator.classList.add('active');
+                scrollToBottom();
+            } else {
+                typingIndicator.classList.remove('active');
+            }
+        }
+
+        // Handle Send
+        async function handleSend() {
+            const text = chatInput.value.trim();
+            if (text === '') return;
+
+            // 1. Show user message
+            addMessage(text, 'user');
+            chatInput.value = '';
+
+            // 2. Show typing indicator
+            showTyping(true);
+
+            // 3. Send message to Cloudflare Worker
+            try {
+                const response = await fetch(WORKER_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: text })
+                });
+                
+                const data = await response.json();
+                
+                // 4. Hide typing, show AI reply
+                showTyping(false);
+                
+                if (data.reply) {
+                    addMessage(data.reply, 'echo');
+                } else if (data.error) {
+                    addMessage("Oops, my brain glitched. Try again? 🦜", 'echo');
+                    console.error("Backend error:", data.error);
+                }
+
+            } catch (error) {
+                showTyping(false);
+                addMessage("I can't reach ROROR's server right now. Is the internet okay? 🦜", 'echo');
+                console.error("Fetch error:", error);
+            }
+        }
+
+        // Event Listeners
+        sendBtn.addEventListener('click', handleSend);
+        
+        chatInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                handleSend();
+            }
+        });
+
+        // Initial scroll
+        scrollToBottom();
+
+    </script>
+</body>
+</html>
